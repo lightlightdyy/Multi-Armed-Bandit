@@ -1,3 +1,44 @@
 “”“
 https://zhuanlan.zhihu.com/p/32335683 问题描述 
+步骤 1: 客人 user = 1...T 依次到达餐馆
+步骤 2: 给客人推荐一道菜，客人接受则留下吃饭(reward=1)，拒绝则离开(reward=0)
+步骤 3: 记录选择接受的客人总数 total_reward += reward
+
+假设：
+1.同一道菜，有时候会做的好吃一些 (概率＝p)，有时候会难吃一些 (概率 = 1-p)，但我们并不知道概率p是多少，只能通过多次观测进行统计。
+2.菜做的好吃时 (概率=p)，客人一定会留下(reward=1)；菜不好吃时(概率 = 1- p)，客人一定会离开 (reward=0)。
+  暂时先不考虑个人口味的差异 (后续会在Contextual Bandit中考虑)
+3.菜好吃不好吃只有客人才说的算，饭馆是事先不知道的（先验知识会在Bayesian Bandit中考虑）
 ”“”
+
+
+import numpy as np
+
+T = 100000 # T个客人
+N = 10 # N道菜
+
+true_rewards = np.random.uniform(low=0, high=1, size=N) # N道菜好吃的概率
+estimated_rewards = np.zeros(N)
+number_of_trials = np.zeros(N)
+total_reward = 0 
+
+def alpha_greedy(N, alpha=0.1):
+    item = 0
+    if np.random.random() < alpha:
+        item = np.random.randint(low=0, high=N)
+    else:
+        item = np.argmax(estimated_rewards)
+    reward = np.random.binomial(n=1, p=true_rewards[item])
+    return item, reward
+
+for t in range(1, T): # T个客人依次进入餐馆
+   # 从N道菜中推荐一个，reward = 1 表示客人接受，reward = 0 表示客人拒绝并离开
+   item, reward = alpha_greedy(N)
+   total_reward += reward # 一共有多少客人接受了推荐
+
+   # 更新菜的平均成功概率
+   number_of_trials[item] += 1
+   estimated_rewards[item] = ((number_of_trials[item] - 1) * estimated_rewards[item] + reward) / number_of_trials[item]
+
+
+print("total_reward=" + str(total_reward))
